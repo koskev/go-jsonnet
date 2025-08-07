@@ -914,7 +914,7 @@ func (i *interpreter) manifestAndSerializeMulti(v value, stringOutputMode bool) 
 			if stringOutputMode {
 				switch val := fileJSON.(type) {
 				case string:
-					r[filename] = val
+					r[filename] = val + "\n"
 				default:
 					msg := fmt.Sprintf("multi mode: top-level object's key %s has a value of type %T, "+
 						"should be a string", filename, val)
