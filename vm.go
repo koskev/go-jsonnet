@@ -178,6 +178,10 @@ const (
 // version is the current gojsonnet's version
 const version = "v0.21.0"
 
+func (vm *VM) buildConfiguredInterpreter() (*interpreter, error) {
+	return buildInterpreter(vm.ext, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.EvalHook)
+}
+
 // Evaluate evaluates a Jsonnet program given by an Abstract Syntax Tree
 // and returns serialized JSON as string.
 // TODO(sbarzowski) perhaps is should return JSON in standard Go representation
@@ -187,7 +191,11 @@ func (vm *VM) Evaluate(node ast.Node) (val string, err error) {
 			err = fmt.Errorf("(CRASH) %v\n%s", r, debug.Stack())
 		}
 	}()
-	return evaluate(node, vm.ext, vm.tla, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.StringOutput, vm.EvalHook)
+	i, err := vm.buildConfiguredInterpreter()
+	if err != nil {
+		return "", err
+	}
+	return evaluate(i, node, vm.tla, vm.StringOutput)
 }
 
 // EvaluateStream evaluates a Jsonnet program given by an Abstract Syntax Tree
@@ -198,7 +206,11 @@ func (vm *VM) EvaluateStream(node ast.Node) (output []string, err error) {
 			err = fmt.Errorf("(CRASH) %v\n%s", r, debug.Stack())
 		}
 	}()
-	return evaluateStream(node, vm.ext, vm.tla, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.EvalHook)
+	i, err := vm.buildConfiguredInterpreter()
+	if err != nil {
+		return nil, err
+	}
+	return evaluateStream(i, node, vm.tla)
 }
 
 // EvaluateMulti evaluates a Jsonnet program given by an Abstract Syntax Tree
@@ -210,7 +222,11 @@ func (vm *VM) EvaluateMulti(node ast.Node) (output map[string]string, err error)
 			err = fmt.Errorf("(CRASH) %v\n%s", r, debug.Stack())
 		}
 	}()
-	return evaluateMulti(node, vm.ext, vm.tla, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.StringOutput, vm.EvalHook)
+	i, err := vm.buildConfiguredInterpreter()
+	if err != nil {
+		return nil, err
+	}
+	return evaluateMulti(i, node, vm.tla, vm.StringOutput)
 }
 
 func (vm *VM) evaluateSnippet(diagnosticFileName ast.DiagnosticFileName, filename string, snippet string, kind evalKind) (output interface{}, err error) {
@@ -223,13 +239,17 @@ func (vm *VM) evaluateSnippet(diagnosticFileName ast.DiagnosticFileName, filenam
 	if err != nil {
 		return "", err
 	}
+	i, err := vm.buildConfiguredInterpreter()
+	if err != nil {
+		return "", err
+	}
 	switch kind {
 	case evalKindRegular:
-		output, err = evaluate(node, vm.ext, vm.tla, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.StringOutput, vm.EvalHook)
+		output, err = evaluate(i, node, vm.tla, vm.StringOutput)
 	case evalKindMulti:
-		output, err = evaluateMulti(node, vm.ext, vm.tla, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.StringOutput, vm.EvalHook)
+		output, err = evaluateMulti(i, node, vm.tla, vm.StringOutput)
 	case evalKindStream:
-		output, err = evaluateStream(node, vm.ext, vm.tla, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.EvalHook)
+		output, err = evaluateStream(i, node, vm.tla)
 	}
 	if err != nil {
 		return "", err
