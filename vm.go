@@ -43,7 +43,8 @@ type VM struct { //nolint:govet
 	nativeFuncs    map[string]*NativeFunction
 	importer       Importer
 	ErrorFormatter ErrorFormatter
-	StringOutput   bool
+	StringOutput   bool // expect to evaluate to a string, and output that string directly
+	OutputNewline  bool // add a trailing newline (default true)
 	importCache    *importCache
 	traceOut       io.Writer
 	EvalHook       EvalHook
@@ -79,6 +80,7 @@ func MakeVM() *VM {
 		tla:            make(vmExtMap),
 		nativeFuncs:    make(map[string]*NativeFunction),
 		ErrorFormatter: &termErrorFormatter{pretty: false, maxStackTraceSize: 20},
+		OutputNewline:  true,
 		importer:       &FileImporter{},
 		importCache:    makeImportCache(defaultImporter),
 		traceOut:       os.Stderr,
@@ -195,7 +197,7 @@ func (vm *VM) Evaluate(node ast.Node) (val string, err error) {
 	if err != nil {
 		return "", err
 	}
-	return evaluate(i, node, vm.tla, vm.StringOutput)
+	return evaluate(i, node, vm.tla, vm.StringOutput, vm.OutputNewline)
 }
 
 // EvaluateStream evaluates a Jsonnet program given by an Abstract Syntax Tree
@@ -226,7 +228,7 @@ func (vm *VM) EvaluateMulti(node ast.Node) (output map[string]string, err error)
 	if err != nil {
 		return nil, err
 	}
-	return evaluateMulti(i, node, vm.tla, vm.StringOutput)
+	return evaluateMulti(i, node, vm.tla, vm.StringOutput, vm.OutputNewline)
 }
 
 func (vm *VM) evaluateSnippet(diagnosticFileName ast.DiagnosticFileName, filename string, snippet string, kind evalKind) (output interface{}, err error) {
@@ -245,9 +247,9 @@ func (vm *VM) evaluateSnippet(diagnosticFileName ast.DiagnosticFileName, filenam
 	}
 	switch kind {
 	case evalKindRegular:
-		output, err = evaluate(i, node, vm.tla, vm.StringOutput)
+		output, err = evaluate(i, node, vm.tla, vm.StringOutput, vm.OutputNewline)
 	case evalKindMulti:
-		output, err = evaluateMulti(i, node, vm.tla, vm.StringOutput)
+		output, err = evaluateMulti(i, node, vm.tla, vm.StringOutput, vm.OutputNewline)
 	case evalKindStream:
 		output, err = evaluateStream(i, node, vm.tla)
 	}

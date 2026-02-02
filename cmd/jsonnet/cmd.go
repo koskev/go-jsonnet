@@ -51,6 +51,7 @@ func usage(o io.Writer) {
 	fmt.Fprintln(o, "                             files")
 	fmt.Fprintln(o, "  -y / --yaml-stream         Write output as a YAML stream of JSON documents")
 	fmt.Fprintln(o, "  -S / --string              Expect a string, manifest as plain text")
+	fmt.Fprintln(o, "  --no-trailing-newline      Do not add a trailing newline to the output")
 	fmt.Fprintln(o, "  -s / --max-stack <n>       Number of allowed stack frames")
 	fmt.Fprintln(o, "  -t / --max-trace <n>       Max length of stack trace before cropping")
 	fmt.Fprintln(o, "  --version                  Print version")
@@ -256,11 +257,19 @@ func processArgs(givenArgs []string, config *config, vm *jsonnet.VM) (processArg
 			config.evalStream = true
 		} else if arg == "-S" || arg == "--string" {
 			vm.StringOutput = true
+		} else if arg == "--no-trailing-newline" {
+			vm.OutputNewline = false
 		} else if len(arg) > 1 && arg[0] == '-' {
 			return processArgsStatusFailure, fmt.Errorf("unrecognized argument: %s", arg)
 		} else {
 			remainingArgs = append(remainingArgs, arg)
 		}
+	}
+
+	// --no-trailing-newline is meaningless when used with --yaml-stream
+	// so we explicitly reject it to prevent people from relying on it.
+	if config.evalStream && !vm.OutputNewline {
+		return processArgsStatusFailure, fmt.Errorf("cannot use --no-trailing-newline with --yaml-stream")
 	}
 
 	want := "filename"
