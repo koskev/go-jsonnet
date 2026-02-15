@@ -231,7 +231,9 @@ func (vm *VM) EvaluateMulti(node ast.Node) (output map[string]string, err error)
 	return evaluateMulti(i, node, vm.tla, vm.StringOutput, vm.OutputNewline)
 }
 
-func (vm *VM) evaluateSnippet(diagnosticFileName ast.DiagnosticFileName, filename string, snippet string, kind evalKind) (output interface{}, err error) {
+func (vm *VM) evaluateSnippet(diagnosticFileName ast.DiagnosticFileName, filename string,
+	snippet string, kind evalKind,
+) (output interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("(CRASH) %v\n%s", r, debug.Stack())
@@ -284,7 +286,9 @@ func getAbsPath(path string, canonicalPaths bool) (string, error) {
 	return absPath, nil
 }
 
-func (vm *VM) findDependencies(filePath string, node *ast.Node, dependencies map[string]struct{}, stackTrace *[]TraceFrame, canonicalPaths bool) (err error) {
+func (vm *VM) findDependencies(filePath string, node *ast.Node, dependencies map[string]struct{},
+	stackTrace *[]TraceFrame, canonicalPaths bool,
+) (err error) {
 	var cleanedAbsPath string
 	switch i := (*node).(type) {
 	case *ast.Import:
@@ -583,6 +587,16 @@ func (vm *VM) ImportAST(importedFrom, importedPath string) (contents ast.Node, f
 // SnippetToAST parses a snippet and returns the resulting AST.
 func SnippetToAST(filename string, snippet string) (ast.Node, error) {
 	return program.SnippetToAST(ast.DiagnosticFileName(filename), filename, snippet)
+}
+
+// SnippetToASTNoAnalyze skips the analyze phase. Useful for LSPs
+func SnippetToASTNoAnalyze(filename string, snippet string) (ast.Node, error) {
+	node, _, err := parser.SnippetToRawAST(ast.DiagnosticFileName(filename), filename, snippet)
+	if err != nil {
+		return nil, err
+	}
+	err = program.DesugarAST(&node)
+	return node, err
 }
 
 // Version returns the Jsonnet version number.
