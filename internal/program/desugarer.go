@@ -565,7 +565,7 @@ func desugar(astPtr *ast.Node, objLevel int) (err error) {
 	return nil
 }
 
-// desugarAST desugars Jsonnet expressions to reduce the number of constructs
+// DesugarAST desugars Jsonnet expressions to reduce the number of constructs
 // the rest of the implementation needs to understand.
 //
 // Note that despite the name, desugar() is not idempotent.  String literals
@@ -578,7 +578,7 @@ func desugar(astPtr *ast.Node, objLevel int) (err error) {
 // TODO(sbarzowski) Actually we may want to do some static analysis before
 // desugaring, e.g. warning user about dangerous use of constructs that we
 // desugar.
-func desugarAST(ast *ast.Node) error {
+func DesugarAST(ast *ast.Node) error {
 	err := desugar(ast, 0)
 	if err != nil {
 		return err
