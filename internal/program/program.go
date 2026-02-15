@@ -12,7 +12,7 @@ func SnippetToAST(diagnosticFilename ast.DiagnosticFileName, importedFilename, s
 	if err != nil {
 		return nil, err
 	}
-	err = desugarAST(&node)
+	err = DesugarAST(&node)
 	if err != nil {
 		return nil, err
 	}
