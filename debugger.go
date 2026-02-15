@@ -118,9 +118,18 @@ func traverse(root ast.Node, f func(node *ast.Node) error) error {
 	return nil
 }
 
+func (d *Debugger) GetVM() *VM {
+	return d.vm
+}
+
+func (d *Debugger) SetVM(vm *VM) {
+	d.vm = vm
+}
+
 func (d *Debugger) Continue() {
 	d.cont <- continuationEvent{}
 }
+
 func (d *Debugger) ContinueUntilAfter(n ast.Node) {
 	d.cont <- continuationEvent{
 		until: &n,
@@ -265,6 +274,7 @@ func (d *Debugger) SetBreakpoint(file string, line int, column int) (string, err
 	d.breakpoints[target] = true
 	return target, nil
 }
+
 func (d *Debugger) ClearBreakpoints(file string) {
 	abs, _ := filepath.Abs(file)
 	for k := range d.breakpoints {
