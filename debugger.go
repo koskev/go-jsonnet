@@ -287,6 +287,9 @@ func (d *Debugger) ClearBreakpoints(file string) {
 }
 
 func (d *Debugger) LookupValue(val string) (string, error) {
+	if d.interpreter == nil {
+		return "", fmt.Errorf("called LookupValue before the first evaluate")
+	}
 	switch val {
 	case "self":
 		return debugValueToString(d.interpreter.stack.getSelfBinding().self), nil
