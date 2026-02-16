@@ -287,26 +287,24 @@ func (d *Debugger) ClearBreakpoints(file string) {
 }
 
 // Allows the debugger to evaluate any code. Highly experimental as it alters the stack
-func (d *Debugger) EvaluateExperimental(node ast.Node) (string, error) {
-	// Use shortcut if we have a var
-	switch currentNode := node.(type) {
-	case *ast.Var:
-		return d.LookupValue(string(currentNode.Id))
-	}
-	// TODO: Do we need to make a deep copy of the whole interpreter? The following does not help
-	// tempInterpreter := *d.interpreter
-
-	//tempInterpreter.stack.stack = make([]*callFrame, len(d.interpreter.stack.stack))
-	//if tempInterpreter.stack.currentTrace.loc != nil {
-	//	loc := *tempInterpreter.stack.currentTrace.loc
-	//	tempInterpreter.stack.currentTrace.loc = &loc
-	//}
-	//copy(tempInterpreter.stack.stack, d.interpreter.stack.stack)
+func (d *Debugger) EvaluateSkip(node ast.Node) (result value, err error) {
+	d.skip = true
+	defer func() {
+		if r := recover(); r != nil {
+			d.skip = false
+			err = fmt.Errorf("%v", r)
+		}
+	}()
 	val, err := d.interpreter.rawevaluate(node, nonTailCall)
+	d.skip = false
+	return val, err
+}
+
+func (d *Debugger) LookupNode(node ast.Node) (string, error) {
+	val, err := d.EvaluateSkip(node)
 	if err != nil {
 		return "", err
 	}
-
 	return debugValueToString(val), nil
 }
 
@@ -330,7 +328,7 @@ func (d *Debugger) LookupValue(val string) (string, error) {
 							err = fmt.Errorf("%v", r)
 						}
 					}()
-					rv, err = d.interpreter.rawevaluate(v.body, 0)
+					rv, err = d.EvaluateSkip(v.body)
 					return
 				}()
 				d.skip = false
