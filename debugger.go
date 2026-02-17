@@ -397,11 +397,11 @@ func debugValueToString(v value) string {
 			}
 			if !firstLine {
 				sb.WriteString(", ")
-				firstLine = true
 			}
 			sb.WriteString(k.field)
 			sb.WriteString(": ")
 			sb.WriteString(debugValueToString(v))
+			firstLine = false
 		}
 		sb.WriteString("}")
 		return sb.String()
