@@ -529,6 +529,8 @@ func desugar(astPtr *ast.Node, objLevel int) (err error) {
 		}
 
 	case *ast.Parens:
+		// The inner node should have the same location as the parens as we otherwise lose this information
+		*node.Inner.Loc() = *node.Loc()
 		*astPtr = node.Inner
 		err = desugar(astPtr, objLevel)
 		if err != nil {
